@@ -1,0 +1,7 @@
+{
+  "name": "UA Online Admin Helper",
+  "description": "Спеціалізований інструмент для адміністрації UA Online для швидкого пошуку правил та покарань з інтегрованим ШІ помічником.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
