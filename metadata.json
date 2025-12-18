@@ -1,7 +1,6 @@
+
 {
-  "name": "UA Online Admin Helper",
-  "description": "Спеціалізований інструмент для адміністрації UA Online для швидкого пошуку правил та покарань з інтегрованим ШІ помічником.",
-  "requestFramePermissions": [
-    "microphone"
-  ]
+  "name": "UA Online Admin Suite V4",
+  "description": "Персональний асистент для адміністрації проекту UA Online. Повна автоматизація та швидкий доступ.",
+  "requestFramePermissions": []
 }
