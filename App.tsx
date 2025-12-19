@@ -29,13 +29,112 @@ const SnowflakeBackground = () => {
   );
 };
 
+const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
+  const [canStart, setCanStart] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  const startIntro = () => {
+    setCanStart(true);
+    // Даємо невелику затримку для рендеру елементів
+    setTimeout(() => {
+      if (audioRef.current) {
+        audioRef.current.play().catch(err => {
+          console.error("Audio play failed:", err);
+          setLoadError(true);
+        });
+      }
+      if (videoRef.current) {
+        videoRef.current.play().catch(err => {
+          console.error("Video play failed:", err);
+        });
+      }
+    }, 150);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[200] bg-black flex items-center justify-center overflow-hidden">
+      {!canStart ? (
+        <div className="text-center space-y-6 animate-fadeIn">
+          <div className="w-24 h-24 mx-auto bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/30 animate-pulse">
+            <i className="fas fa-shield-halved text-4xl text-emerald-500"></i>
+          </div>
+          <h2 className="text-xl font-black text-white uppercase tracking-widest">Авторизація Системи</h2>
+          <button 
+            onClick={startIntro}
+            className="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-2xl transition-all active:scale-95 shadow-lg shadow-emerald-600/20"
+          >
+            УВІЙТИ В ТЕРМІНАЛ
+          </button>
+        </div>
+      ) : (
+        <div className="relative w-full h-full flex items-center justify-center animate-fadeIn">
+          {/* Відео заставка */}
+          <video 
+            ref={videoRef}
+            className="absolute inset-0 w-full h-full object-cover opacity-60"
+            muted
+            loop
+            playsInline
+            onError={() => setLoadError(true)}
+          >
+            <source src="assets/intro_video.mp4" type="video/mp4" />
+          </video>
+          
+          <div className="relative z-10 text-center px-6">
+            <div className="inline-block p-1 rounded-full bg-emerald-500/20 mb-4">
+              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></div>
+            </div>
+            <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter uppercase mb-2 drop-shadow-2xl">
+              ВІТАЄМО, АДМІН
+            </h1>
+            <p className="text-emerald-400 font-bold tracking-[0.3em] text-xs uppercase animate-pulse">
+              Встановлення зв'язку з базою правил...
+            </p>
+            
+            {loadError && (
+              <button 
+                onClick={onFinish}
+                className="mt-12 px-6 py-3 bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase rounded-xl border border-white/10 transition-all"
+              >
+                Помилка завантаження. Увійти вручну
+              </button>
+            )}
+          </div>
+
+          {/* Аудіо супровід */}
+          <audio 
+            ref={audioRef}
+            src="assets/intro_audio.mp3"
+            onError={() => setLoadError(true)}
+            onEnded={() => {
+              // Плавне зникнення перед завершенням
+              const overlay = document.querySelector('.fixed.inset-0.z-\\[200\\]');
+              overlay?.classList.add('opacity-0', 'transition-opacity', 'duration-1000');
+              setTimeout(onFinish, 1000);
+            }}
+          />
+          
+          <button 
+            className="absolute bottom-10 opacity-20 hover:opacity-100 transition-opacity text-[10px] text-white font-bold uppercase tracking-widest"
+            onClick={onFinish}
+          >
+            [ Пропустити заставку ]
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const App: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'rules' | 'ai' | 'tools' | 'dates' | 'peace'>('rules');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isAiLoading, setIsAiLoading] = useState(false);
-  const [showWelcome, setShowWelcome] = useState(false);
+  const [showSplash, setShowSplash] = useState(false);
   
   // Radio State
   const [isPlaying, setIsPlaying] = useState(false);
@@ -70,10 +169,9 @@ const App: React.FC = () => {
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Оновлена логіка фільтрації: повертає порожній масив, якщо пошуковий термін порожній
   const filteredRules = useMemo(() => {
     const lowerSearch = searchTerm.toLowerCase().trim();
-    if (!lowerSearch) return []; // Повертаємо порожній список, якщо нічого не введено
+    if (!lowerSearch) return [];
     return RULES_DATA.filter(rule => 
       rule.title.toLowerCase().includes(lowerSearch) ||
       rule.description.toLowerCase().includes(lowerSearch) ||
@@ -83,8 +181,8 @@ const App: React.FC = () => {
   }, [searchTerm]);
 
   useEffect(() => {
-    const hasVisited = localStorage.getItem('ua_admin_v5_init');
-    if (!hasVisited) setShowWelcome(true);
+    const hasVisited = localStorage.getItem('ua_admin_v5_splash_done');
+    if (!hasVisited) setShowSplash(true);
   }, []);
 
   useEffect(() => {
@@ -203,34 +301,11 @@ const App: React.FC = () => {
       <SnowflakeBackground />
       <audio ref={audioRef} onEnded={() => setIsPlaying(false)} onError={() => setRadioError("Помилка завантаження потоку")} />
       
-      {showWelcome && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl animate-fadeIn">
-          <div className="glass-card w-full max-sm p-8 rounded-[2.5rem] text-center space-y-6 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
-            <div className="w-32 h-32 mx-auto mb-4 bg-slate-800/50 rounded-3xl flex items-center justify-center border border-white/5 shadow-inner">
-              <img src="assets/logo.png" alt="Logo" className="w-24 h-24 object-contain drop-shadow-lg" onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                  const parent = (e.target as HTMLImageElement).parentElement;
-                  if (parent && !parent.querySelector('i')) {
-                    const icon = document.createElement('i');
-                    icon.className = 'fas fa-shield-halved text-5xl text-emerald-500 animate-pulse';
-                    parent.appendChild(icon);
-                  }
-                }}
-              />
-            </div>
-            <div className="space-y-4">
-              <h2 className="text-2xl font-black text-white">Вітаємо, Адміністраторе!</h2>
-              <div className="space-y-3 px-2 text-slate-400 text-xs leading-relaxed">
-                <p>Цей сайт створено для полегшення вашої роботи.</p>
-                <p>Творець сайту: <span className="text-emerald-400">Артем Процко</span>.</p>
-                <p className="text-red-500 font-black uppercase tracking-tight">ЗАБОРОНЕНО ПЕРЕДАВАТИ ГРАВЦЯМ!</p>
-              </div>
-            </div>
-            <button onClick={() => { localStorage.setItem('ua_admin_v5_init', 'true'); setShowWelcome(false); }} className="w-full py-4 rounded-2xl bg-[#0e9062] hover:bg-[#0c7a52] text-white font-black text-sm shadow-[0_4px_15px_rgba(14,144,98,0.3)] transition-all active:scale-95">
-              Почати роботу
-            </button>
-          </div>
-        </div>
+      {showSplash && (
+        <SplashScreen onFinish={() => {
+          localStorage.setItem('ua_admin_v5_splash_done', 'true');
+          setShowSplash(false);
+        }} />
       )}
 
       <header className="flex flex-col items-center mb-6 space-y-4 no-select">
@@ -409,7 +484,7 @@ const App: React.FC = () => {
         )}
       </main>
 
-      <footer className="mt-auto text-center opacity-10 no-select py-8 border-t border-white/5"><p className="text-[8px] font-black uppercase tracking-[0.5em]">UA ONLINE ADMIN SUITE V5.4 FINAL</p></footer>
+      <footer className="mt-auto text-center opacity-10 no-select py-8 border-t border-white/5"><p className="text-[8px] font-black uppercase tracking-[0.5em]">UA ONLINE ADMIN SUITE V5.6 STABLE</p></footer>
     </div>
   );
 };
