@@ -5,6 +5,26 @@ import { REPORT_TEMPLATES, IMPORTANT_DATES, ADMIN_COMMANDS } from './data/admin_
 import { ChatMessage } from './types';
 import { getGeminiResponse } from './services/geminiService';
 
+const MaintenanceMode = ({ reason }: { reason: string }) => (
+  <div className="fixed inset-0 z-[999] bg-[#020617] flex items-center justify-center p-6 text-center">
+    <div className="snow-container opacity-20"><div className="snowflake" style={{left: '50%'}}><i className="fas fa-tools"></i></div></div>
+    <div className="glass-card p-8 rounded-[2.5rem] border-amber-500/30 max-w-sm shadow-2xl shadow-amber-900/20">
+      <div className="w-20 h-20 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-amber-500/20">
+        <i className="fas fa-wrench text-3xl text-amber-500 animate-bounce"></i>
+      </div>
+      <h1 className="text-xl font-black text-white uppercase mb-4 tracking-tighter">Технічні роботи</h1>
+      <p className="text-slate-400 text-xs leading-relaxed mb-6">
+        Вибачте, термінал тимчасово недоступний. Спробуйте пізніше.
+      </p>
+      <div className="bg-black/40 p-4 rounded-2xl border border-white/5">
+        <p className="text-[10px] font-bold text-amber-400 uppercase mb-1 tracking-widest">Причина:</p>
+        <p className="text-[11px] text-slate-300 italic">"{reason}"</p>
+      </div>
+      <p className="mt-8 text-[8px] text-slate-600 uppercase font-bold tracking-[0.3em]">Artem_Furrry System Control</p>
+    </div>
+  </div>
+);
+
 const SnowflakeBackground = () => {
   const [flakes, setFlakes] = useState<any[]>([]);
   useEffect(() => {
